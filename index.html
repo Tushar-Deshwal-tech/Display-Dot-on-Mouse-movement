@@ -8,51 +8,44 @@
 </head>
 
 <body>
-
+    <div>Hello</div>
     <script>
-        // Add event listener for mousemove event on the body
         document.body.addEventListener('mousemove', myFunction);
 
-        // Function to handle mousemove event
-        function myFunction(e) {
-            // Get mouse coordinates
-            let x = e.clientX;
-            let y = e.clientY;
+function myFunction(e) {
+  let x = e.clientX;
+  let y = e.clientY;
+  
+  // Create a colored dot
+  let dot = document.createElement("div");
+  dot.id = 'dot';  
+  dot.style.position = "absolute";
+  dot.style.width = "10px";
+  dot.style.height = "10px";
+  dot.style.borderRadius = "50%";
+  dot.style.backgroundColor = getRandomColor(); // Random color
+  dot.style.left = (x - 5) + "px"; // Adjusting for dot size
+  dot.style.top = (y - 5) + "px"; // Adjusting for dot size
+  document.body.appendChild(dot);
+}
 
-            // Create a colored dot element
-            let dot = document.createElement("div");
-            dot.id = 'dot'; // Set id for the dot element
-            dot.style.position = "absolute"; // Position the dot absolutely
-            dot.style.width = "10px"; // Set width of the dot
-            dot.style.height = "10px"; // Set height of the dot
-            dot.style.borderRadius = "50%"; // Make the dot circular
-            dot.style.backgroundColor = getRandomColor(); // Set random background color for the dot
-            dot.style.left = (x - 5) + "px"; // Adjust horizontal position of the dot
-            dot.style.top = (y - 5) + "px"; // Adjust vertical position of the dot
-            document.body.appendChild(dot); // Append the dot to the body
-        }
+function getRandomColor() {
+  let letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
 
-        // Function to generate random color
-        function getRandomColor() {
-            let letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)]; // Append random hexadecimal character to the color
-            }
-            return color; // Return the random color
-        }
+setInterval(displayHello, 1000);
 
-        // Set interval to remove the dot every second
-        setInterval(displayHello, 1000);
-
-        // Function to remove the dot
-        function displayHello() {
-            let removedotcolor = document.getElementById("dot"); // Get the dot element
-            if (removedotcolor) {
-                removedotcolor.remove(); // Remove the dot if it exists   
-            }
-        }
-
+function displayHello() {
+  let removedotcolor = document.getElementById("dot");
+  if (removedotcolor) {
+   removedotcolor.remove();   
+  }  
+}
     </script>
 
 </body>
