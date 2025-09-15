@@ -1,16 +1,13 @@
 Mouse Tracker
     A simple JavaScript project that tracks the mouse cursor on a webpage and creates a colored dot at the cursor’s position. The dot changes its color randomly with each movement, giving a fun, dynamic visual effect.
 
-How It Works
+How It Works    
     1.  Mouse Movement Detection
         A mousemove event is triggered on the document.body whenever the mouse moves.
-
     2. Dot Creation
         The myFunction (or similar function) is called in response to the mousemove event. It creates a small dot element at the current mouse position.
-
     3. Random Colors
         The getRandomColor function generates a random color in hexadecimal format for each dot, making every movement colorful and dynamic.
-
     4. Dot Removal
         The displayHello function (or similar logic) removes the dot from the DOM after a short duration using setInterval or setTimeout, preventing clutter.
 
