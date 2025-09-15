@@ -2,52 +2,292 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dot Playground with Draw Tools</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #111;
+      overflow: hidden;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .dot {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .control-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px;
+      z-index: 1000;
+    }
+
+    .control-bar>div {
+      display: none;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control-bar button,
+    .control-bar input {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #444;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .control-bar button:hover,
+    .control-bar input:hover {
+      background: #666;
+    }
+
+    .show {
+      display: flex !important;
+    }
+  </style>
 </head>
 
 <body>
-    <div>Hello</div>
-    <script>
-        document.body.addEventListener('mousemove', myFunction);
+  <div class="control-bar">
+    <div class="main show">
+      <button onclick="setMode('trail')">Trail</button>
+      <button onclick="setMode('draw')">Draw</button>
+      <button onclick="setMode('rain')">Rain</button>
+      <button onclick="setMode('sparkle')">Sparkle</button>
+      <button onclick="setMode('explosion')">Explosion</button>
+      <button onclick="setMode('wave')">Wave</button>
+      <button onclick="setMode('rainbow')">Rainbow Trail</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+    <div class="draw-actions">
+      <button onclick="clearDraw()">Clear Drawing</button>
+      <button onclick="setDrawTool('pen')">Pen</button>
+      <button onclick="setDrawTool('eraser')">Eraser</button>
+      <input type="color" id="brushColor" value="#ffffff">
+      <input type="range" id="brushSize" min="5" max="50" value="10">
+      <button onclick="setMode('exit')">Exit</button>
+    </div>
+    <div class="stop-action">
+      <button onclick="setMode('stop')">Stop</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+  </div>
 
-function myFunction(e) {
-  let x = e.clientX;
-  let y = e.clientY;
-  
-  // Create a colored dot
-  let dot = document.createElement("div");
-  dot.id = 'dot';  
-  dot.style.position = "absolute";
-  dot.style.width = "10px";
-  dot.style.height = "10px";
-  dot.style.borderRadius = "50%";
-  dot.style.backgroundColor = getRandomColor(); // Random color
-  dot.style.left = (x - 5) + "px"; // Adjusting for dot size
-  dot.style.top = (y - 5) + "px"; // Adjusting for dot size
-  document.body.appendChild(dot);
-}
+  <script>
+    let mode = "trail";
+    let drawingDots = [];
+    let rainInterval;
+    let sparkleInterval;
+    let isDrawing = false;
+    let hue = 0;
+    let drawTool = "pen";
 
-function getRandomColor() {
-  let letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
+    function getRandomColor() {
+      return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    }
 
-setInterval(displayHello, 1000);
+    function createDot(x, y, size = 10, color = getRandomColor(), autoRemove = false, saveDot = false) {
+      let dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.width = size + "px";
+      dot.style.height = size + "px";
+      dot.style.backgroundColor = color;
+      dot.style.left = (x - size / 2) + "px";
+      dot.style.top = (y - size / 2) + "px";
+      dot.style.position = "absolute";
+      dot.style.opacity = 1;
+      document.body.appendChild(dot);
+      if (autoRemove) {
+        let fade = setInterval(() => {
+          let currentOpacity = parseFloat(dot.style.opacity);
+          currentOpacity -= 0.02;
+          if (currentOpacity <= 0) {
+            dot.remove();
+            clearInterval(fade);
+          } else {
+            dot.style.opacity = currentOpacity;
+          }
+        }, 30);
+      }
+      if (saveDot) drawingDots.push(dot);
+    }
 
-function displayHello() {
-  let removedotcolor = document.getElementById("dot");
-  if (removedotcolor) {
-   removedotcolor.remove();   
-  }  
-}
-    </script>
 
+    function setDrawTool(tool) {
+      drawTool = tool;
+    }
+
+    document.body.addEventListener("mousedown", (e) => {
+      if (e.target.closest(".control-bar")) return;
+      if ((mode === "draw" || mode === "eraser") && e.button === 0) isDrawing = true;
+      if (mode === "explosion") createExplosion(e.clientX, e.clientY);
+    });
+    document.body.addEventListener("mouseup", () => { if (mode === "draw" || mode === "eraser") isDrawing = false; });
+
+    document.body.addEventListener("mousemove", (e) => {
+      if (e.target.closest(".control-bar")) return;
+      if (mode === "trail") createDot(e.clientX, e.clientY, 10, getRandomColor(), true);
+      else if (mode === "draw" && isDrawing) {
+        let size = document.getElementById("brushSize").value;
+        if (drawTool === "pen") {
+          let color = document.getElementById("brushColor").value;
+          createDot(e.clientX, e.clientY, size, color, false, true);
+        } else if (drawTool === "eraser") {
+          drawingDots = drawingDots.filter(dot => {
+            let rect = dot.getBoundingClientRect();
+            let dx = e.clientX - (rect.left + rect.width / 2);
+            let dy = e.clientY - (rect.top + rect.height / 2);
+            if (Math.sqrt(dx * dx + dy * dy) < size) { dot.remove(); return false; }
+            return true;
+          });
+        }
+      } else if (mode === "rainbow") {
+        let color = `hsl(${hue},100%,50%)`;
+        createDot(e.clientX, e.clientY, 10, color, true);
+        hue = (hue + 5) % 360;
+      }
+    });
+
+    function clearDraw() { drawingDots.forEach(dot => dot.remove()); drawingDots = []; }
+    function clearAll() { document.querySelectorAll(".dot").forEach(dot => dot.remove()); drawingDots = []; }
+
+    function updateControlBar(newMode) {
+      document.querySelector(".main").classList.remove("show");
+      document.querySelector(".draw-actions").classList.remove("show");
+      document.querySelector(".stop-action").classList.remove("show");
+      if (newMode === "draw" || newMode === "eraser") document.querySelector(".draw-actions").classList.add("show");
+      else if (["rain", "wave"].includes(newMode)) document.querySelector(".stop-action").classList.add("show");
+      else document.querySelector(".main").classList.add("show");
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      clearInterval(rainInterval);
+      clearInterval(sparkleInterval);
+      updateControlBar(newMode);
+
+      if (mode === "rain") {
+        rainInterval = setInterval(() => {
+          let x = Math.random() * window.innerWidth;
+          createDot(x, -10, 10, getRandomColor(), false);
+
+          let dots = document.querySelectorAll(".dot");
+          let current = dots[dots.length - 1];
+          current.style.position = "absolute";
+
+          let vy = 2;
+          let gravity = 0.2;
+
+          let fall = setInterval(() => {
+            let top = parseFloat(current.style.top);
+            vy += gravity;
+            top += vy;
+
+            if (top + 10 >= window.innerHeight) {
+              current.remove();
+              clearInterval(fall);
+            } else {
+              current.style.top = top + "px";
+            }
+          }, 16);
+        }, 100);
+      } else if (mode === "sparkle") {
+        sparkleInterval = setInterval(() => {
+          let x = Math.random() * window.innerWidth;
+          let y = Math.random() * window.innerHeight;
+          createDot(x, y, 5, getRandomColor(), true);
+        }, 5);
+      } else if (mode === "wave") {
+        rainInterval = setInterval(() => {
+          let x = Math.random() * window.innerWidth;
+          let dot = document.createElement("div");
+          dot.className = "dot";
+          dot.style.width = "10px";
+          dot.style.height = "10px";
+          dot.style.position = "absolute";
+          dot.style.backgroundColor = getRandomColor();
+          dot.style.left = x + "px";
+          dot.style.top = "-10px";
+          document.body.appendChild(dot);
+
+          let vy = 5;
+          let bounces = 0;
+          let gravity = 0.5;
+          const maxBounces = 3;
+
+          let fall = setInterval(() => {
+            let top = parseFloat(dot.style.top);
+            vy += gravity;
+            top += vy;
+
+            if (top + 10 >= window.innerHeight) {
+              top = window.innerHeight - 10;
+              vy = -vy * 0.6;
+              bounces++;
+              if (bounces >= maxBounces && Math.abs(vy) < 1) {
+                dot.remove();
+                clearInterval(fall);
+                return;
+              }
+            }
+            dot.style.top = top + "px";
+          }, 30);
+        }, 50);
+      }
+    }
+
+    function createExplosion(x, y) {
+      const floor = window.innerHeight;
+
+      for (let i = 0; i < 30; i++) {
+        let angle = Math.random() * 2 * Math.PI;
+        let speed = Math.random() * 10 + 2;
+        let vx = Math.cos(angle) * speed;
+        let vy = Math.sin(angle) * speed;
+
+        let dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.width = "8px";
+        dot.style.height = "8px";
+        dot.style.backgroundColor = getRandomColor();
+        dot.style.position = "absolute";
+        dot.style.left = x + "px";
+        dot.style.top = y + "px";
+        document.body.appendChild(dot);
+
+        let move = setInterval(() => {
+          let left = parseFloat(dot.style.left);
+          let top = parseFloat(dot.style.top);
+
+          dot.style.left = left + vx + "px";
+          dot.style.top = top + vy + "px";
+
+          vy += 0.3;
+
+          if (top + vy >= floor - 8) {
+            dot.remove();
+            clearInterval(move);
+          }
+        }, 40);
+      }
+    }
+
+  </script>
 </body>
 
 </html>
